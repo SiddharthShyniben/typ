@@ -8,15 +8,8 @@ const {_initBox, _gameOverBox} = require('./boxes.js');
 const {pass, fail, reset, failCount, render: renderScoring} = require('./scoring.js');
 
 const screen = blessed.screen({smartCSR: true});
-const initBox = blessed.box(clone(_initBox));
+const initBox = blessed.box(clone(_initBox()));
 
-const gameOverBox = blessed.box(clone(_gameOverBox));
-
-gameOverBox.key(['p'], () => {
-	screen.remove(gameOverBox);
-	screen.render();
-	play();
-});
 
 const statsBox = blessed.box({
 	width: '100%',
@@ -108,6 +101,14 @@ function play() {
 
 	const gameLoop = setInterval(() => {
 		if (failCount() >= 3) {
+			const gameOverBox = blessed.box(clone(_gameOverBox()));
+
+			gameOverBox.key(['p'], () => {
+				screen.remove(gameOverBox);
+				screen.render();
+				play();
+			});
+
 			clearInterval(gameLoop);
 			screen.remove(typingBox);
 			screen.remove(cmdLineTwo);
