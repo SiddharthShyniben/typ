@@ -1,9 +1,11 @@
+require('./args.js');
+
+const config = require('./config');
 const blessed = require('blessed');
 
 const {clone} = require('./util.js');
-const wordGen = require('./words.js');
+const getWord = require('./words.js');
 const lb = require('./leaderboard.js');
-let getWords = wordGen();
 const {_initBox, _gameOverBox, _statsBox, _floatingWordBox, _inputBox} = require('./boxes.js');
 
 const {pass, fail, reset: resetScore, failCount, render: renderScoring, passCount} = require('./scoring.js');
@@ -13,6 +15,8 @@ const initBox = blessed.box(clone(_initBox()));
 const statsBox = blessed.box(clone(_statsBox()));
 const floatingWordBox = blessed.box(clone(_floatingWordBox()));
 const input = blessed.textbox(clone(_inputBox()));
+let gameOverBox;
+let optionsBox;
 
 screen.append(initBox);
 screen.key(['escape', 'C-c'], () => process.exit(0));
@@ -21,7 +25,6 @@ screen.key(['l'], leaderboard);
 
 function play() {
 	resetScore();
-	getWords = wordGen();
 	statsBox.setContent(renderScoring());
 	screen.remove(initBox);
 	screen.append(floatingWordBox);
@@ -62,7 +65,7 @@ function play() {
 	const gameLoop = setInterval(() => {
 		screen.render();
 		if (failCount() >= 3) {
-			const gameOverBox = blessed.box(clone(_gameOverBox()));
+			gameOverBox = blessed.box(clone(_gameOverBox()));
 
 			gameOverBox.key(['p'], () => {
 				screen.remove(gameOverBox);
@@ -111,22 +114,24 @@ function play() {
 			framePassed = 0;
 			frame = getFrame(floatingWordBox);
 		}
-	}, process.env.DEBUG ? 1000 : 150);
+	}, +config.get('tick'));
+
+	setInterval(() => frame = getFrame(floatingWordBox, frame || undefined), 5000)
 
 	screen.render();
 }
 
 function leaderboard() {
 	screen.remove(initBox);
-
+	if (gameOverBox) screen.remove(gameOverBox);
+	
 	const highScores = blessed.listtable({
-		width: '50%',
-		left: 'center',
 		height: '100%',
+		width: '100%',
 		border: {type: 'line'},
 		rows: [
-			['Missed', 'Passed'],
-			...Object.entries(lb.getLeaderboard()).map(x => x.map(y => y.toString()))
+			[' ', 'Missed', 'Passed', 'Score'],
+			...lb.getLeaderboard().map((x, i) => [i + 1, ...x, x[1] - x[0]].map(y => y.toString()))
 		]
 	});
 
@@ -137,16 +142,21 @@ function leaderboard() {
 initBox.focus();
 screen.render();
 
-function getFrame({height}) {
-	const strs = new Array(height).fill('');
+function getFrame({height}, prevFrame) {
+	height = height - 2;
+	const strs = prevFrame ? prevFrame.split('\n') : new Array(height).fill('');
 
-	const words = getWords.next().value;
+	const word = getWord();
 
-	words.forEach(word => {
-		const randLine = Math.floor(Math.random() * height);
-		word = word.padStart(Math.floor(Math.random() * (floatingWordBox.width / 4)));
-		strs[randLine] = word + strs[randLine].slice(word.length);
-	});
+	let randLine = Math.floor(Math.random() * height);
+
+	let i = 10;
+	while (strs[randLine].trim() && i) {
+		i--;
+		randLine = Math.floor(Math.random() * height);
+	}
+
+	strs[randLine] = word + strs[randLine].slice(word.length);
 
 	return strs.join('\n');
 }

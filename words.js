@@ -62,23 +62,7 @@ const words = [
 // returns a bunch of words for the new frame.
 // number of words increases exponentially with the number of frames
 
-const series = [1, 2, 1, 3, 2, 1, 3, 4, 6, 7, 8]
+const getWord = () => words[Math.floor(Math.random() * words.length) + 1];
 
-function* getWords() {
-	let i = 0;
-	let count = series[i];
-
-	while (true) {
-		const items = new Array(count).fill('').map(() => words[Math.floor(Math.random() * words.length)]);
-		yield items;
-
-		i++;
-		if (i >= series.length) {
-			i = 0;
-		}
-		count = series[i];
-	}
-}
-
-module.exports = getWords;
+module.exports = getWord;
 module.exports.words = words;

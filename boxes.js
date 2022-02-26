@@ -34,6 +34,7 @@ Game over!
 You got ${passCount()} words right!
 
 ${green(bold('P'))}lay again
+${green(bold('L'))}eaderboard
 Press ${green('<Esc>')} to exit
 {/center}
 `.trim(),
