@@ -18,6 +18,9 @@ const words = [
 	'chmod',
 	'tolocaledatestring',
 	'vscode',
+	'recover',
+	'if',
+	'del',
 	'flocinaucinihilipilification', // lmao
 	'iterm2',
 	'value',
@@ -44,7 +47,16 @@ const words = [
 	'dislocate',
 	'quotastats',
 	'string',
-	'xargs'
+	'xargs',
+	'typeof',
+	'function',
+	'lastindexof',
+	'indexof',
+	'md5sum',
+	'unix2dos',
+	'propertyisenumerable',
+	'propertyiswritable',
+	'__definegetter__',
 ];
 
 // returns a bunch of words for the new frame.

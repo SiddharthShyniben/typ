@@ -1,6 +1,6 @@
 const bold = s => `{bold}${s}{/bold}`;
 const green = s => `{green-fg}${s}{/green-fg}`;
 
-const isAlpha = x => /^[a-zA-Z]+$/.test(x);
+const clone = x => JSON.parse(JSON.stringify(x));
 
-module.exports = {bold, green, isAlpha};
+module.exports = {bold, green, clone};
