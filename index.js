@@ -3,89 +3,54 @@ const blessed = require('blessed');
 const {clone} = require('./util.js');
 const wordGen = require('./words.js');
 let getWords = wordGen();
-const {_initBox, _gameOverBox} = require('./boxes.js');
+const {_initBox, _gameOverBox, _statsBox, _floatingWordBox, _inputBox} = require('./boxes.js');
 
-const {pass, fail, reset, failCount, render: renderScoring} = require('./scoring.js');
+const {pass, fail, reset: resetScore, failCount, render: renderScoring} = require('./scoring.js');
 
 const screen = blessed.screen({smartCSR: true});
 const initBox = blessed.box(clone(_initBox()));
-
-const statsBox = blessed.box({
-	width: '100%',
-	height: '10%',
-	top: '0',
-	content: renderScoring(),
-	tags: true,
-	style: {fg: 'white'},
-	border: {type: 'line'},
-	grabKeys: true
-})
-
-const typingBox = blessed.box({
-	width: '100%',
-	height: '80%',
-	top: '10%',
-	content: ``.trim(),
-	tags: true,
-	border: {
-		type: 'line'
-	},
-	style: {
-		fg: 'white',
-	}
-});
-
-const cmdLineTwo = blessed.textbox({
-	width: '100%',
-	height: '10%',
-	top: '90%',
-	keys: true,
-	mouse: true,
-	inputOnFocus: true,
-	input: true,
-	border: {
-		type: 'line'
-	},
-});
+const statsBox = blessed.box(clone(_statsBox()));
+const floatingWordBox = blessed.box(clone(_floatingWordBox()));
+const input = blessed.textbox(clone(_inputBox()));
 
 screen.append(initBox);
-
-screen.key(['escape', 'C-c'], function() {
-  return process.exit(0);
-});
-
+screen.key(['escape', 'C-c'], () => process.exit(0));
 screen.key(['t'], play)
 
 function play() {
-	reset();
+	resetScore();
 	getWords = wordGen();
-
 	statsBox.setContent(renderScoring());
-	screen.render();
-
 	screen.remove(initBox);
-	screen.append(typingBox);
-	screen.append(cmdLineTwo);
+	screen.append(floatingWordBox);
+	screen.append(input);
 	screen.append(statsBox);
-	cmdLineTwo.focus();
-
+	screen.render();
+	input.focus();
 
 	let frame = '';
 	let framePassed = 0;
 
+	const setFrame = f => {
+		frame = f;
+		floatingWordBox.setContent(frame);
+		screen.render();
+	}
+
 	setInterval(() => {
 		screen.render()
-		typingBox.setContent(frame);
+		floatingWordBox.setContent(frame);
 	}, 10)
 
 	const getNormalizedFrame = (f = frame) => f.split('\n').map(line => line.trimEnd()).join('\n');
 	const getNormalizedFrameArray = (f = frame) => getNormalizedFrame(f).split('\n');
 
-	cmdLineTwo.on('submit', text => {
+	input.on('submit', text => {
 		if (text.trim() === '') return;
-		cmdLineTwo.clearValue();
-		cmdLineTwo.focus();
+		input.clearValue();
+		input.focus();
 		screen.render();
+
 
 		const lineIdx = getNormalizedFrameArray().findIndex(line => line.includes(text));
 
@@ -95,13 +60,10 @@ function play() {
 
 			frame = getNormalizedFrameArray();
 			frame[lineIdx] = frame[lineIdx].replace(text, '').trimEnd();
-			frame = frame.join('\n');
-
-			text = '';
-
-			typingBox.setContent(frame);
-			screen.render();
+			setFrame(frame.join('\n'));
 		}
+
+		text = '';
 	});
 
 	const gameLoop = setInterval(() => {
@@ -116,8 +78,8 @@ function play() {
 			});
 
 			clearInterval(gameLoop);
-			screen.remove(typingBox);
-			screen.remove(cmdLineTwo);
+			screen.remove(floatingWordBox);
+			screen.remove(input);
 			screen.remove(statsBox);
 			screen.append(gameOverBox);
 			screen.render();
@@ -127,21 +89,17 @@ function play() {
 		if (getNormalizedFrame().trim()) {
 			framePassed++;
 
-			frame = getNormalizedFrame();
-			typingBox.setContent(frame);
-			screen.render();
+			setFrame(getNormalizedFrame());
 
 			if (
 				framePassed > frame.length
 			) {
 				framePassed = 0;
-				frame = getFrame(typingBox);
-				typingBox.setContent(frame);
-				screen.render();
+				setFrame(getFrame(floatingWordBox));
 			}
 
-			if (getNormalizedFrameArray().find(x => x.length >= typingBox.width - 2)) {
-				const failingLineNumber = getNormalizedFrameArray().findIndex(x => x.length >= typingBox.width - 2);
+			if (getNormalizedFrameArray().find(x => x.length >= floatingWordBox.width - 2)) {
+				const failingLineNumber = getNormalizedFrameArray().findIndex(x => x.length >= floatingWordBox.width - 2);
 				console.log(getNormalizedFrame().trim());
 
 				frame = getNormalizedFrameArray();
@@ -150,22 +108,16 @@ function play() {
 
 				fail();
 				statsBox.setContent(renderScoring());
-				typingBox.setContent(frame);
-
-				screen.render();
+				setFrame(frame);
 				return;
 			}
 
-			frame = getNormalizedFrameArray().map(x => ' ' + x).join('\n');
-			typingBox.setContent(frame);
-			screen.render();
+			setFrame(getNormalizedFrameArray().map(x => ' ' + x).join('\n'));
 		} else {
 			framePassed = 0;
-			frame = getFrame(typingBox);
-			typingBox.setContent(frame);
-			screen.render();
+			setFrame(getFrame(floatingWordBox));
 		}
-	}, 100);
+	}, 1000);
 
 	screen.render();
 }
@@ -180,9 +132,9 @@ function getFrame({height}) {
 
 	words.forEach(word => {
 		const randLine = Math.floor(Math.random() * height);
-		word = word.padStart(Math.floor(Math.random() * (typingBox.width / 4)));
+		word = word.padStart(Math.floor(Math.random() * (floatingWordBox.width / 4)));
 		strs[randLine] = word + strs[randLine].slice(word.length);
-	})
+	});
 
 	return strs.join('\n');
 }

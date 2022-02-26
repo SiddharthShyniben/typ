@@ -1,5 +1,5 @@
 const {bold, green} = require('./util.js');
-const {passCount} = require('./scoring.js');
+const {passCount, render: renderScoring} = require('./scoring.js');
 
 const _initBox = () => ({
 	top: 'center',
@@ -48,4 +48,42 @@ Press ${green('<Esc>')} to exit
 	}
 });
 
-module.exports = {_initBox, _gameOverBox};
+const _statsBox = () => ({
+	width: '100%',
+	height: '10%',
+	top: '0',
+	content: renderScoring(),
+	tags: true,
+	style: {fg: 'white'},
+	border: {type: 'line'},
+	grabKeys: true
+});
+
+const _floatingWordBox = () => ({
+	width: '100%',
+	height: '80%',
+	top: '10%',
+	content: ``.trim(),
+	tags: true,
+	border: {
+		type: 'line'
+	},
+	style: {
+		fg: 'white',
+	}
+});
+
+const _inputBox = () => ({
+	width: '100%',
+	height: '10%',
+	top: '90%',
+	keys: true,
+	mouse: true,
+	inputOnFocus: true,
+	input: true,
+	border: {
+		type: 'line'
+	},
+});
+
+module.exports = {_initBox, _gameOverBox, _statsBox, _floatingWordBox, _inputBox};
