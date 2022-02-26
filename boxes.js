@@ -28,7 +28,6 @@ const _gameOverBox = () => ({
 	top: 'center',
 	left: 'center',
 	width: '50%',
-	height: 7,
 	content: `
 {center}
 Game over!

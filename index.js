@@ -2,10 +2,11 @@ const blessed = require('blessed');
 
 const {clone} = require('./util.js');
 const wordGen = require('./words.js');
+const lb = require('./leaderboard.js');
 let getWords = wordGen();
 const {_initBox, _gameOverBox, _statsBox, _floatingWordBox, _inputBox} = require('./boxes.js');
 
-const {pass, fail, reset: resetScore, failCount, render: renderScoring} = require('./scoring.js');
+const {pass, fail, reset: resetScore, failCount, render: renderScoring, passCount} = require('./scoring.js');
 
 const screen = blessed.screen({smartCSR: true});
 const initBox = blessed.box(clone(_initBox()));
@@ -16,6 +17,7 @@ const input = blessed.textbox(clone(_inputBox()));
 screen.append(initBox);
 screen.key(['escape', 'C-c'], () => process.exit(0));
 screen.key(['t'], play)
+screen.key(['l'], leaderboard);
 
 function play() {
 	resetScore();
@@ -31,19 +33,13 @@ function play() {
 	let frame = '';
 	let framePassed = 0;
 
-	const setFrame = f => {
-		frame = f;
-		floatingWordBox.setContent(frame);
-		screen.render();
-	}
-
 	setInterval(() => {
-		screen.render()
 		floatingWordBox.setContent(frame);
+		screen.render()
 	}, 10)
 
-	const getNormalizedFrame = (f = frame) => f.split('\n').map(line => line.trimEnd()).join('\n');
-	const getNormalizedFrameArray = (f = frame) => getNormalizedFrame(f).split('\n');
+	const getNormalizedFrame = () => frame.split('\n').map(line => line.trimEnd()).join('\n');
+	const getNormalizedFrameArray = () => getNormalizedFrame().split('\n');
 
 	input.on('submit', text => {
 		if (text.trim() === '') return;
@@ -51,19 +47,16 @@ function play() {
 		input.focus();
 		screen.render();
 
-
 		const lineIdx = getNormalizedFrameArray().findIndex(line => line.includes(text));
 
 		if (lineIdx > -1) {
 			pass();
 			statsBox.setContent(renderScoring());
 
-			frame = getNormalizedFrameArray();
-			frame[lineIdx] = frame[lineIdx].replace(text, '').trimEnd();
-			setFrame(frame.join('\n'));
+			let tempFrame = getNormalizedFrameArray();
+			tempFrame[lineIdx] = tempFrame[lineIdx].replace(text, '').trimEnd();
+			frame = tempFrame.join('\n');
 		}
-
-		text = '';
 	});
 
 	const gameLoop = setInterval(() => {
@@ -77,6 +70,8 @@ function play() {
 				play();
 			});
 
+			lb.push([failCount(), passCount()]);
+
 			clearInterval(gameLoop);
 			screen.remove(floatingWordBox);
 			screen.remove(input);
@@ -89,36 +84,53 @@ function play() {
 		if (getNormalizedFrame().trim()) {
 			framePassed++;
 
-			setFrame(getNormalizedFrame());
+			frame = getNormalizedFrame();
 
 			if (
 				framePassed > frame.length
 			) {
 				framePassed = 0;
-				setFrame(getFrame(floatingWordBox));
+				frame = getFrame(floatingWordBox);
 			}
 
 			if (getNormalizedFrameArray().find(x => x.length >= floatingWordBox.width - 2)) {
 				const failingLineNumber = getNormalizedFrameArray().findIndex(x => x.length >= floatingWordBox.width - 2);
-				console.log(getNormalizedFrame().trim());
 
-				frame = getNormalizedFrameArray();
-				frame[failingLineNumber] = '';
-				frame = frame.join('\n');
+				let tempFrame = getNormalizedFrameArray();
+				tempFrame[failingLineNumber] = '';
+				frame = tempFrame.join('\n');
 
 				fail();
 				statsBox.setContent(renderScoring());
-				setFrame(frame);
+				screen.render();
 				return;
 			}
 
-			setFrame(getNormalizedFrameArray().map(x => ' ' + x).join('\n'));
+			frame = getNormalizedFrameArray().map(x => ' ' + x).join('\n');
 		} else {
 			framePassed = 0;
-			setFrame(getFrame(floatingWordBox));
+			frame = getFrame(floatingWordBox);
 		}
-	}, 1000);
+	}, process.env.DEBUG ? 1000 : 150);
 
+	screen.render();
+}
+
+function leaderboard() {
+	screen.remove(initBox);
+
+	const highScores = blessed.listtable({
+		width: '50%',
+		left: 'center',
+		height: '100%',
+		border: {type: 'line'},
+		rows: [
+			['Missed', 'Passed'],
+			...Object.entries(lb.getLeaderboard()).map(x => x.map(y => y.toString()))
+		]
+	});
+
+	screen.append(highScores);
 	screen.render();
 }
 
