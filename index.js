@@ -81,8 +81,8 @@ function play() {
 	let frame = '';
 	let framePassed = 0;
 
-	const getNormalizedFrame = frame => frame.split('\n').map(line => line.trimEnd()).join('\n');
-	const getNormalizedFrameArray = frame => getNormalizedFrame(frame).split('\n');
+	const getNormalizedFrame = (frame = frame) => frame.split('\n').map(line => line.trimEnd()).join('\n');
+	const getNormalizedFrameArray = (frame = frame) => getNormalizedFrame().split('\n');
 
 	cmdLineTwo.on('submit', text => {
 		cmdLineTwo.clearValue();
@@ -101,7 +101,7 @@ function play() {
 
 			text = '';
 
-			typingBox.setContent(frame);
+			typingBox.setContent();
 			screen.render();
 		}
 	});
@@ -120,8 +120,8 @@ function play() {
 		if (getNormalizedFrame().trim()) {
 			framePassed++;
 
-			frame = getNormalizedFrame(frame);
-			typingBox.setContent(frame);
+			frame = getNormalizedFrame();
+			typingBox.setContent();
 			screen.render();
 
 			if (
@@ -129,7 +129,7 @@ function play() {
 			) {
 				framePassed = 0;
 				frame = getFrame(typingBox);
-				typingBox.setContent(frame);
+				typingBox.setContent();
 				screen.render();
 			}
 
@@ -142,19 +142,19 @@ function play() {
 
 				fail();
 				statsBox.setContent(renderScoring());
-				typingBox.setContent(frame);
+				typingBox.setContent();
 
 				screen.render();
 				return;
 			}
 
 			frame = getNormalizedFrameArray().map(x => ' ' + x).join('\n');
-			typingBox.setContent(frame);
+			typingBox.setContent();
 			screen.render();
 		} else {
 			framePassed = 0;
 			frame = getFrame(typingBox);
-			typingBox.setContent(frame);
+			typingBox.setContent();
 			screen.render();
 		}
 	}, 100);
