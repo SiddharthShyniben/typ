@@ -63,7 +63,7 @@ const _floatingWordBox = () => ({
 	width: '100%',
 	height: '80%',
 	top: '10%',
-	content: ``.trim(),
+	content: '',
 	tags: true,
 	border: {
 		type: 'line'

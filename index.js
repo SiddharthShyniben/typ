@@ -50,7 +50,11 @@ function play() {
 		input.focus();
 		screen.render();
 
-		const lineIdx = getNormalizedFrameArray().findIndex(line => line.includes(text));
+		const reg = new RegExp(`\\b${text}\\b`);
+
+		const lineIdx = getNormalizedFrameArray().findIndex(line => {
+			return reg.test(line)
+		});
 
 		if (lineIdx > -1) {
 			pass();
@@ -116,7 +120,13 @@ function play() {
 		}
 	}, +config.get('tick'));
 
-	setInterval(() => frame = getFrame(floatingWordBox, frame || undefined), 5000)
+	const addWord = (i = 20000) => {
+		if (i > 750) i /= 1.5;
+		frame = getFrame(floatingWordBox, frame || undefined)
+		setTimeout(() => addWord(i), i)
+	}
+
+	addWord()
 
 	screen.render();
 }
@@ -142,8 +152,9 @@ function leaderboard() {
 initBox.focus();
 screen.render();
 
-function getFrame({height}, prevFrame) {
-	height = height - 2;
+function getFrame(box, prevFrame) {
+	if (!box || !box.height) return '';
+	const height = box.height - 2;
 	const strs = prevFrame ? prevFrame.split('\n') : new Array(height).fill('');
 
 	const word = getWord();
@@ -156,6 +167,7 @@ function getFrame({height}, prevFrame) {
 		randLine = Math.floor(Math.random() * height);
 	}
 
+	for (i = 0; i < 1e9; i++);
 	strs[randLine] = word + strs[randLine].slice(word.length);
 
 	return strs.join('\n');
