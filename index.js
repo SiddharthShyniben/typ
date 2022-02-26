@@ -69,6 +69,7 @@ function play() {
 	getWords = wordGen();
 
 	statsBox.setContent(renderScoring());
+	screen.render();
 
 	screen.remove(initBox);
 	screen.append(typingBox);
@@ -81,8 +82,8 @@ function play() {
 	let frame = '';
 	let framePassed = 0;
 
-	const getNormalizedFrame = (frame = frame) => frame.split('\n').map(line => line.trimEnd()).join('\n');
-	const getNormalizedFrameArray = (frame = frame) => getNormalizedFrame().split('\n');
+	const getNormalizedFrame = (f = frame) => f.split('\n').map(line => line.trimEnd()).join('\n');
+	const getNormalizedFrameArray = (f = frame) => getNormalizedFrame(f).split('\n');
 
 	cmdLineTwo.on('submit', text => {
 		cmdLineTwo.clearValue();
@@ -94,14 +95,13 @@ function play() {
 		if (lineIdx > -1) {
 			pass();
 			statsBox.setContent(renderScoring());
-			screen.render();
 			frame = getNormalizedFrameArray();
 			frame[lineIdx] = frame[lineIdx].replace(text, '').trimEnd();
 			frame = frame.join('\n');
 
 			text = '';
 
-			typingBox.setContent();
+			typingBox.setContent(frame);
 			screen.render();
 		}
 	});
@@ -121,7 +121,7 @@ function play() {
 			framePassed++;
 
 			frame = getNormalizedFrame();
-			typingBox.setContent();
+			typingBox.setContent(frame);
 			screen.render();
 
 			if (
@@ -129,12 +129,12 @@ function play() {
 			) {
 				framePassed = 0;
 				frame = getFrame(typingBox);
-				typingBox.setContent();
+				typingBox.setContent(frame);
 				screen.render();
 			}
 
 			if (getNormalizedFrameArray().find(x => x.length >= typingBox.width - 2)) {
-				const failingLineNumber = getNormalizedFrameArray().split('\n').findIndex(x => x.length >= typingBox.width - 2);
+				const failingLineNumber = getNormalizedFrameArray().findIndex(x => x.length >= typingBox.width - 2);
 
 				frame = getNormalizedFrameArray();
 				frame[failingLineNumber] = '';
@@ -142,19 +142,19 @@ function play() {
 
 				fail();
 				statsBox.setContent(renderScoring());
-				typingBox.setContent();
+				typingBox.setContent(frame);
 
 				screen.render();
 				return;
 			}
 
 			frame = getNormalizedFrameArray().map(x => ' ' + x).join('\n');
-			typingBox.setContent();
+			typingBox.setContent(frame);
 			screen.render();
 		} else {
 			framePassed = 0;
 			frame = getFrame(typingBox);
-			typingBox.setContent();
+			typingBox.setContent(frame);
 			screen.render();
 		}
 	}, 100);
