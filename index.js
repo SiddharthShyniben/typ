@@ -10,7 +10,6 @@ const {pass, fail, reset, failCount, render: renderScoring} = require('./scoring
 const screen = blessed.screen({smartCSR: true});
 const initBox = blessed.box(clone(_initBox()));
 
-
 const statsBox = blessed.box({
 	width: '100%',
 	height: '10%',
@@ -70,15 +69,20 @@ function play() {
 	screen.append(statsBox);
 	cmdLineTwo.focus();
 
-	screen.render();
 
 	let frame = '';
 	let framePassed = 0;
+
+	setInterval(() => {
+		screen.render()
+		typingBox.setContent(frame);
+	}, 10)
 
 	const getNormalizedFrame = (f = frame) => f.split('\n').map(line => line.trimEnd()).join('\n');
 	const getNormalizedFrameArray = (f = frame) => getNormalizedFrame(f).split('\n');
 
 	cmdLineTwo.on('submit', text => {
+		if (text.trim() === '') return;
 		cmdLineTwo.clearValue();
 		cmdLineTwo.focus();
 		screen.render();
@@ -88,6 +92,7 @@ function play() {
 		if (lineIdx > -1) {
 			pass();
 			statsBox.setContent(renderScoring());
+
 			frame = getNormalizedFrameArray();
 			frame[lineIdx] = frame[lineIdx].replace(text, '').trimEnd();
 			frame = frame.join('\n');
@@ -100,6 +105,7 @@ function play() {
 	});
 
 	const gameLoop = setInterval(() => {
+		screen.render();
 		if (failCount() >= 3) {
 			const gameOverBox = blessed.box(clone(_gameOverBox()));
 
@@ -136,6 +142,7 @@ function play() {
 
 			if (getNormalizedFrameArray().find(x => x.length >= typingBox.width - 2)) {
 				const failingLineNumber = getNormalizedFrameArray().findIndex(x => x.length >= typingBox.width - 2);
+				console.log(getNormalizedFrame().trim());
 
 				frame = getNormalizedFrameArray();
 				frame[failingLineNumber] = '';
