@@ -3,14 +3,14 @@ require('./args.js');
 const config = require('./config');
 const blessed = require('blessed');
 
-const {clone} = require('./util.js');
+const {clone, colorize} = require('./util.js');
 const getWord = require('./words.js');
 const lb = require('./leaderboard.js');
 const {_initBox, _gameOverBox, _statsBox, _floatingWordBox, _inputBox} = require('./boxes.js');
 
 const {pass, fail, reset: resetScore, failCount, render: renderScoring, passCount} = require('./scoring.js');
 
-const screen = blessed.screen({smartCSR: true});
+const screen = blessed.screen({smartCSR: true, dockBorders: true});
 const initBox = blessed.box(clone(_initBox()));
 const statsBox = blessed.box(clone(_statsBox()));
 const floatingWordBox = blessed.box(clone(_floatingWordBox()));
@@ -36,10 +36,12 @@ function play() {
 	let frame = '';
 	let framePassed = 0;
 
-	setInterval(() => {
-		floatingWordBox.setContent(frame);
+	const renderLoop = setInterval(() => {
+		const [coloredFrame, color] = colorize(frame, floatingWordBox.width);
+		floatingWordBox.setContent(coloredFrame);
+		floatingWordBox.border.fg = color;
 		screen.render()
-	}, 10)
+	}, 1000 / 60)
 
 	const getNormalizedFrame = () => frame.split('\n').map(line => line.trimEnd()).join('\n');
 	const getNormalizedFrameArray = () => getNormalizedFrame().split('\n');
@@ -50,11 +52,9 @@ function play() {
 		input.focus();
 		screen.render();
 
-		const reg = new RegExp(`\\b${text}\\b`);
+		const reg = new RegExp(`\\b${text.replace('+', '\\+')}\\b`);
 
-		const lineIdx = getNormalizedFrameArray().findIndex(line => {
-			return reg.test(line)
-		});
+		const lineIdx = getNormalizedFrameArray().findIndex(line => reg.test(line));
 
 		if (lineIdx > -1) {
 			pass();
@@ -68,7 +68,11 @@ function play() {
 
 	const gameLoop = setInterval(() => {
 		screen.render();
-		if (failCount() >= 3) {
+
+		const maxFails = +config.get('max-misses') ?? 5;
+		if (failCount() >= maxFails) {
+			clearInterval(renderLoop);
+			clearInterval(gameLoop);
 			gameOverBox = blessed.box(clone(_gameOverBox()));
 
 			gameOverBox.key(['p'], () => {
@@ -79,7 +83,6 @@ function play() {
 
 			lb.push([failCount(), passCount()]);
 
-			clearInterval(gameLoop);
 			screen.remove(floatingWordBox);
 			screen.remove(input);
 			screen.remove(statsBox);
@@ -104,7 +107,7 @@ function play() {
 				const failingLineNumber = getNormalizedFrameArray().findIndex(x => x.length >= floatingWordBox.width - 2);
 
 				let tempFrame = getNormalizedFrameArray();
-				tempFrame[failingLineNumber] = '';
+				tempFrame[failingLineNumber] = tempFrame[failingLineNumber].replace(/\w+$/, '');
 				frame = tempFrame.join('\n');
 
 				fail();
@@ -118,12 +121,14 @@ function play() {
 			framePassed = 0;
 			frame = getFrame(floatingWordBox);
 		}
-	}, +config.get('tick'));
+	}, +config.get('tick') || 150);
 
 	const addWord = (i = 20000) => {
-		if (i > 750) i /= 1.5;
-		frame = getFrame(floatingWordBox, frame || undefined)
-		setTimeout(() => addWord(i), i)
+		if (i > 1000) i /= 1.5;
+		try {
+			frame = getFrame(floatingWordBox, frame || undefined)
+		} catch(e) {}
+		return setTimeout(() => addWord(i), i)
 	}
 
 	addWord()

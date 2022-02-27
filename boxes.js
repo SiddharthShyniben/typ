@@ -50,19 +50,17 @@ Press ${green('<Esc>')} to exit
 
 const _statsBox = () => ({
 	width: '100%',
-	height: '10%',
-	top: '0',
+	height: 1,
+	top: 0,
 	content: renderScoring(),
 	tags: true,
 	style: {fg: 'white'},
-	border: {type: 'line'},
-	grabKeys: true
 });
 
 const _floatingWordBox = () => ({
 	width: '100%',
-	height: '80%',
-	top: '10%',
+	height: '100%-2',
+	top: 1,
 	content: '',
 	tags: true,
 	border: {
@@ -75,15 +73,12 @@ const _floatingWordBox = () => ({
 
 const _inputBox = () => ({
 	width: '100%',
-	height: '10%',
-	top: '90%',
+	height: 1,
+	top: '100%-1',
 	keys: true,
 	mouse: true,
 	inputOnFocus: true,
 	input: true,
-	border: {
-		type: 'line'
-	},
 });
 
 module.exports = {_initBox, _gameOverBox, _statsBox, _floatingWordBox, _inputBox};
