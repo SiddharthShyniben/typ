@@ -12,6 +12,7 @@ ${green('Typ v1.0.0')}
 
 ${green(bold('T'))}est your speed
 ${green(bold('L'))}eaderboard
+${green(bold('G'))}lobal Leaderboard
 Press ${green('<Esc>')} to exit
 {/center}
 `.trim(),
@@ -35,6 +36,7 @@ You got ${passCount()} words right!
 
 ${green(bold('P'))}lay again
 ${green(bold('L'))}eaderboard
+${green(bold('S'))}ubmit to global Leaderboard
 Press ${green('<Esc>')} to exit
 {/center}
 `.trim(),

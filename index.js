@@ -22,6 +22,7 @@ screen.append(initBox);
 screen.key(['escape', 'C-c'], () => process.exit(0));
 screen.key(['t'], play)
 screen.key(['l'], leaderboard);
+screen.key(['g'], globalLeaderboard);
 
 function play() {
 	resetScore();
@@ -80,6 +81,10 @@ function play() {
 				screen.render();
 				play();
 			});
+
+			gameOverBox.key(['s'], () => {
+				lb.addToGlobalLeaderboard({name: config.get('name') || 'unknown', score: passCount() - failCount()}).then(globalLeaderboard);
+			})
 
 			lb.push([failCount(), passCount()]);
 
@@ -147,6 +152,26 @@ function leaderboard() {
 		rows: [
 			[' ', 'Missed', 'Passed', 'Score'],
 			...lb.getLeaderboard().map((x, i) => [i + 1, ...x, x[1] - x[0]].map(y => y.toString()))
+		]
+	});
+
+	screen.append(highScores);
+	screen.render();
+}
+
+async function globalLeaderboard() {
+	screen.remove(initBox);
+	if (gameOverBox) screen.remove(gameOverBox);
+
+	const leaderboard = (await lb.fetchGlobalLeaderboard()).sort((a, b) => b.score - a.score).map(a => [a.name, a.score]);
+
+	const highScores = blessed.listtable({
+		height: '100%',
+		width: '100%',
+		border: {type: 'line'},
+		rows: [
+			[' ', 'Name', 'Score'],
+			...leaderboard.map((x, i) => [i + 1, ...x].map(y => y.toString()))
 		]
 	});
 
